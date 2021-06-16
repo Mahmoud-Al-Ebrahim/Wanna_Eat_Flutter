@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:fourth_year_project/Screens/Top%20Meals%20Screen.dart';
 
 import 'Screens/Auth Screen.dart';
 import 'Screens/On Boarding Screen.dart';
@@ -20,6 +21,7 @@ class WannaEat extends StatelessWidget {
       home: OnBoardingScreen() ,
       routes: {
         Auth_Screen.route_name: (context)=>Auth_Screen(),
+        Top_Meal_Screen.route_name:(context)=>Top_Meal_Screen(),
       },
     );
   }

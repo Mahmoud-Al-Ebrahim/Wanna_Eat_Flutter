@@ -1,9 +1,26 @@
+import 'dart:async';
+import 'dart:io';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:fourth_year_project/Configs.dart';
+import 'package:fourth_year_project/Screens/Top%20Meals%20Screen.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:http/http.dart';
 import '../back ground.dart';
+import '../Helpers/Helpers.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert' as convert;
+import 'package:connectivity/connectivity.dart';
 
+ void makeToast(String message) {
+Fluttertoast.showToast(
+msg: message,
+gravity: ToastGravity.BOTTOM,
+backgroundColor: Colors.lightBlue,
+textColor: Colors.white,
+toastLength: Toast.LENGTH_LONG);
+}
 class Auth_Screen extends StatefulWidget {
   static String route_name = '/Auth_Screen';
 
@@ -27,6 +44,9 @@ class _Auth_ScreenState extends State<Auth_Screen>
   bool _confirmPasswordVisible = true;
   Icon _passwordVisibleIcon = Icon(Icons.remove_red_eye);
   Icon _confirmPasswordVisibleIcon = Icon(Icons.remove_red_eye);
+  String _message;
+  bool _isSuccessful = false;
+  bool _noErrors = true;
 
   @override
   void initState() {
@@ -41,9 +61,10 @@ class _Auth_ScreenState extends State<Auth_Screen>
         ));
     _opacityAnimation =
         Tween<double>(begin: 0.0, end: 1.0).animate(CurvedAnimation(
-          parent: _controller,
-          curve: Curves.easeIn,
-        ));
+      parent: _controller,
+      curve: Curves.easeIn,
+    ));
+    Timer.periodic(Duration(milliseconds: 250), (timer) {});
     super.initState();
   }
 
@@ -59,12 +80,21 @@ class _Auth_ScreenState extends State<Auth_Screen>
 
   @override
   Widget build(BuildContext context) {
-    var deviceSize = MediaQuery
-        .of(context)
-        .size;
+    var deviceSize = MediaQuery.of(context).size;
     return Scaffold(
       body: Stack(
-        children: [BackGroundGradient(), _makeLogo()],
+        children: [
+          BackGroundGradient(),
+          _makeLogo(),
+          _isSuccessful == true
+              ? Transform.translate(offset: Offset(0,-25),
+                child: Align(
+                    child: CircularProgressIndicator(),
+                    alignment: Alignment.bottomCenter,
+                  ),
+              )
+              : SizedBox(height: 0,)
+        ],
       ),
     );
   }
@@ -84,9 +114,7 @@ class _Auth_ScreenState extends State<Auth_Screen>
   }
 
   _makeLogo() {
-    var deviceSize = MediaQuery
-        .of(context)
-        .size;
+    var deviceSize = MediaQuery.of(context).size;
     return Container(
       height: deviceSize.height,
       width: deviceSize.width,
@@ -103,9 +131,7 @@ class _Auth_ScreenState extends State<Auth_Screen>
                     ..translate(-10.0),
                   decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(20),
-                      color: Theme
-                          .of(context)
-                          .accentColor,
+                      color: Theme.of(context).accentColor,
                       boxShadow: [
                         BoxShadow(
                             blurRadius: 15,
@@ -131,16 +157,16 @@ class _Auth_ScreenState extends State<Auth_Screen>
   }
 
   _makeCardSignAndLogin() {
-    var deviceSize = MediaQuery
-        .of(context)
-        .size;
+    var deviceSize = MediaQuery.of(context).size;
     return Card(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
       ),
       elevation: 8.0,
       child: AnimatedContainer(
-        height: _authMode == AuthMode.SignUp ? deviceSize.height/2 : deviceSize.height/2.35,
+        height: _authMode == AuthMode.SignUp
+            ? deviceSize.height / 2
+            : deviceSize.height / 2.35,
         curve: Curves.easeIn,
         duration: Duration(
           milliseconds: 300,
@@ -154,7 +180,7 @@ class _Auth_ScreenState extends State<Auth_Screen>
               mainAxisSize: MainAxisSize.min,
               children: [
                 AnimatedContainer(
-                  height: deviceSize.height*0.1,
+                  height: deviceSize.height * 0.1,
                   duration: Duration(milliseconds: 300),
                   curve: Curves.easeIn,
                   child: TextFormField(
@@ -177,7 +203,7 @@ class _Auth_ScreenState extends State<Auth_Screen>
                   ),
                 ),
                 AnimatedContainer(
-                  height: deviceSize.height*0.1,
+                  height: deviceSize.height * 0.1,
                   duration: Duration(milliseconds: 300),
                   curve: Curves.easeIn,
                   child: TextFormField(
@@ -209,13 +235,14 @@ class _Auth_ScreenState extends State<Auth_Screen>
                   ),
                 ),
                 AnimatedContainer(
-                  height: _authMode == AuthMode.SignUp ?deviceSize.height*0.1 : 0,
+                  height: _authMode == AuthMode.SignUp
+                      ? deviceSize.height * 0.1
+                      : 0,
                   duration: Duration(milliseconds: 300),
                   curve: Curves.easeIn,
                   child: FadeTransition(
                     opacity: _opacityAnimation,
                     child: TextFormField(
-
                       controller: _confirmPasswordController,
                       obscureText: _confirmPasswordVisible,
                       decoration: InputDecoration(
@@ -224,11 +251,11 @@ class _Auth_ScreenState extends State<Auth_Screen>
                             onPressed: () {
                               setState(() {
                                 _confirmPasswordVisible =
-                                !_confirmPasswordVisible;
+                                    !_confirmPasswordVisible;
                                 _confirmPasswordVisibleIcon =
-                                _confirmPasswordVisible == false
-                                    ? Icon(Icons.visibility_off)
-                                    : Icon(Icons.remove_red_eye);
+                                    _confirmPasswordVisible == false
+                                        ? Icon(Icons.visibility_off)
+                                        : Icon(Icons.remove_red_eye);
                               });
                             },
                           ),
@@ -241,7 +268,7 @@ class _Auth_ScreenState extends State<Auth_Screen>
                     ),
                   ),
                 ),
-                SizedBox(height: deviceSize.height*0.03),
+                SizedBox(height: deviceSize.height * 0.03),
                 RaisedButton(
                   onPressed: _submit,
                   child: Text(
@@ -251,9 +278,7 @@ class _Auth_ScreenState extends State<Auth_Screen>
                       borderRadius: BorderRadius.circular(25)),
                   padding: EdgeInsets.symmetric(vertical: 8, horizontal: 30),
                   textColor: Colors.white,
-                  color: Theme
-                      .of(context)
-                      .primaryColor,
+                  color: Theme.of(context).primaryColor,
                 ),
                 Padding(
                   padding: const EdgeInsets.only(top: 15),
@@ -268,9 +293,7 @@ class _Auth_ScreenState extends State<Auth_Screen>
                       ),
                     ),
                     padding: EdgeInsets.symmetric(vertical: 4, horizontal: 30),
-                    textColor: Theme
-                        .of(context)
-                        .primaryColor,
+                    textColor: Theme.of(context).primaryColor,
                   ),
                 )
               ],
@@ -280,29 +303,62 @@ class _Auth_ScreenState extends State<Auth_Screen>
       ),
     );
   }
-  void _submit() {
-    Map<String, String> validationResult = validation();
-    if (validationResult['validate'] == 'false') {
-      Fluttertoast.showToast(
-          msg: validationResult['message'],
-          gravity: ToastGravity.BOTTOM,
-          backgroundColor: Colors.lightBlue,
-          textColor: Colors.white,
-          toastLength: Toast.LENGTH_LONG
-      );
-    }
 
+  void _submit() async {
+    Map<String, String> validationResult = validation();
+    _formKey.currentState.save();
+    if (validationResult['validate'] == 'false') {
+      makeToast(validationResult['message']);
+    }
+    var connectivityResult = await (Connectivity().checkConnectivity());
+    if (connectivityResult == ConnectivityResult.none) {
+      makeToast('Please check your internet connection');
+    }
+    else if (_authMode == AuthMode.SignUp) {
+      setState(() {
+        _isSuccessful=true;
+      });
+      final body = convert.jsonEncode(
+          {"email": _authData['email'], "password": _authData['password']});
+      final url = Uri.parse('${Config.serverUrl + Config.signUpEndPoint}');
+      await Helpers.postRequest(url, body);
+      final response = convert.jsonDecode(Helpers.currentResponse.body);
+      print(response['isSuccessful']);
+      if (response['isSuccessful']) {
+        setState(() {
+          _isSuccessful =false;
+        });
+        sleep(Duration(milliseconds: 100 ));
+        Navigator.of(context).pushReplacementNamed(Top_Meal_Screen.route_name);
+      }
+      else {
+       setState(() {
+         _isSuccessful=false;
+        makeToast(response['message']);
+         sleep(Duration(milliseconds: 100 ));
+         Navigator.of(context).pushReplacementNamed(Top_Meal_Screen.route_name);
+       });
+      }
+    }
+    else if (_authMode == AuthMode.Login) {
+      setState(() {
+        _isSuccessful=true;
+      });
+      final body = convert.jsonEncode(
+          {"email": _authData['email'], "password": _authData['password']});
+    }
   }
 
   Map<String, String> validation() {
-    if (!RegExp(
-        r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+")
-        .hasMatch(_emailController.text) ||
+    if (!RegExp(r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+")
+            .hasMatch(_emailController.text) ||
         _passwordController.text.length < 8)
       return {'message': 'E-Mail or Password is invalid', 'validate': 'false'};
-    else if (_confirmPasswordController.text != _passwordController.text && _authMode==AuthMode.SignUp) {
+    else if (_confirmPasswordController.text != _passwordController.text &&
+        _authMode == AuthMode.SignUp) {
       return {'message': 'Password is not Matched', 'validate': 'false'};
     }
     return {};
   }
+
 }
